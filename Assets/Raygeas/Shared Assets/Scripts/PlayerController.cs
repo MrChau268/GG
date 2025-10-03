@@ -84,14 +84,13 @@ namespace Raygeas
         private RaycastHit _groundHit;
         private float _nextFootstep;
 
-
-
+        public VirtualJoystick joystick;
         private void Awake()
         {
             GetTerrainData();
             _characterController = GetComponent<CharacterController>();
             Cursor.visible = false;
-            Cursor.lockState = CursorLockMode.Locked;
+            // Cursor.lockState = CursorLockMode.Locked;
         }
 
         //Getting all terrain data for footstep system
@@ -130,8 +129,16 @@ namespace Raygeas
                 _velocity.y = Mathf.Sqrt(jumpForce * -2f * gravity);
             }
 
-            _horizontalMovement = Input.GetAxis("Horizontal");
-            _verticalMovement = Input.GetAxis("Vertical");
+            // if (joystick != null)
+            // {
+            //     _horizontalMovement = joystick.Horizontal();
+            //     _verticalMovement = joystick.Vertical();
+            // }
+            // else
+            // {
+                _horizontalMovement = Input.GetAxis("Horizontal");
+                _verticalMovement = Input.GetAxis("Vertical");
+            // }
 
             _moveDirection = transform.forward * _verticalMovement + transform.right * _horizontalMovement;
 
