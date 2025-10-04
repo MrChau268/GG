@@ -85,11 +85,13 @@ namespace Raygeas
         private float _nextFootstep;
 
         public VirtualJoystick joystick;
+        private Animator _animator;
         private void Awake()
         {
             GetTerrainData();
             _characterController = GetComponent<CharacterController>();
             Cursor.visible = false;
+            _animator = GetComponent<Animator>();
             // Cursor.lockState = CursorLockMode.Locked;
         }
 
@@ -109,11 +111,32 @@ namespace Raygeas
             Movement();
             MouseLook();
             GroundChecker();
+            UpdateAnimation();
         }
 
         private void FixedUpdate()
         {
             SpeedCheck();
+        }
+
+        private void UpdateAnimation()
+        {
+            // How much player is moving (0 = idle, up to 1)
+            float movementMagnitude = new Vector2(_horizontalMovement, _verticalMovement).magnitude;
+
+            float targetSpeed = 0f;
+
+            if (movementMagnitude > 0.1f)
+            {
+                if (_isRunning)
+                    targetSpeed = 1f;   // Run
+                else
+                    targetSpeed = 0.5f; // Walk
+            }
+
+            // Smooth transition
+            float smoothedSpeed = Mathf.Lerp(_animator.GetFloat("Speed"), targetSpeed, Time.deltaTime * 8f);
+            _animator.SetFloat("Speed", smoothedSpeed);
         }
 
         //Character controller movement
@@ -127,6 +150,7 @@ namespace Raygeas
             if (Input.GetKey(jumpKey) && _characterController.isGrounded)
             {
                 _velocity.y = Mathf.Sqrt(jumpForce * -2f * gravity);
+                _animator.SetTrigger("Jump");
             }
 
             // if (joystick != null)
@@ -136,8 +160,8 @@ namespace Raygeas
             // }
             // else
             // {
-                _horizontalMovement = Input.GetAxis("Horizontal");
-                _verticalMovement = Input.GetAxis("Vertical");
+            _horizontalMovement = Input.GetAxis("Horizontal");
+            _verticalMovement = Input.GetAxis("Vertical");
             // }
 
             _moveDirection = transform.forward * _verticalMovement + transform.right * _horizontalMovement;
@@ -148,6 +172,13 @@ namespace Raygeas
 
             _velocity.y += gravity * Time.deltaTime;
             _characterController.Move(_velocity * Time.deltaTime);
+
+            if (Input.GetMouseButtonDown(0)) // Left mouse click
+            {
+                _animator.SetTrigger("Throw");
+                // Optionally call your projectile spawn here
+                // ThrowProjectile();
+            }
 
         }
 

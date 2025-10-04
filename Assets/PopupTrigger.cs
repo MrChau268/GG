@@ -1,27 +1,38 @@
 using UnityEngine;
+using UnityEngine.UI;
 using DG.Tweening;
+using System.Collections;
 
 public class PopupTrigger : MonoBehaviour
 {
-    [SerializeField] private GameObject popupUI; 
+    [Header("Popup Settings")]
+    [SerializeField] private GameObject popupUI;
+    [SerializeField] private Transform player;
+    [SerializeField] private float showDistance = 4f;
+    [SerializeField] private float hideDistance = 5f;
 
-    private void Start()
+    [Header("Text Settings")]
+    [SerializeField] private Text messageText;       // assign your UI Text here
+    [SerializeField] [TextArea] private string message = "Welcome, traveler."; // customizable message
+    [SerializeField] private float typeSpeed = 0.05f; // speed of typing
+
+    private bool isShown = false;
+    private Coroutine typingCoroutine;
+
+    void Start()
     {
-        popupUI.SetActive(false); // ensure hidden at start
+        popupUI.SetActive(false);
     }
 
-    private void OnTriggerEnter(Collider other)
+    void Update()
     {
-        if (other.CompareTag("Player"))
+        float distance = Vector3.Distance(player.position, transform.position);
+
+        if (!isShown && distance <= showDistance)
         {
             ShowPopup();
         }
-    }
-
-    private void OnTriggerExit(Collider other)
-    {
-        Debug.Log("Exited trigger with: " + other.name);
-        if (other.CompareTag("Player"))
+        else if (isShown && distance >= hideDistance)
         {
             HidePopup();
         }
@@ -29,15 +40,46 @@ public class PopupTrigger : MonoBehaviour
 
     private void ShowPopup()
     {
+        isShown = true;
         popupUI.SetActive(true);
         popupUI.transform.localScale = Vector3.zero;
-        popupUI.transform.DOScale(Vector3.one, 0.5f).SetEase(Ease.OutBack);
+        popupUI.transform
+            .DOScale(Vector3.one, 1f)
+            .SetEase(Ease.OutBack)
+            .OnComplete(() =>
+            {
+                // Start the typing animation after popup fully shown
+                if (typingCoroutine != null)
+                    StopCoroutine(typingCoroutine);
+                typingCoroutine = StartCoroutine(TypeMessage());
+            });
     }
 
     private void HidePopup()
     {
-        popupUI.transform.DOScale(Vector3.zero, 0.3f)
+        isShown = false;
+
+        // Stop text animation if still typing
+        if (typingCoroutine != null)
+            StopCoroutine(typingCoroutine);
+
+        popupUI.transform
+            .DOScale(Vector3.zero, 0.5f)
             .SetEase(Ease.InBack)
-            .OnComplete(() => popupUI.SetActive(false));
+            .OnComplete(() =>
+            {
+                popupUI.SetActive(false);
+                messageText.text = ""; // clear text when hidden
+            });
+    }
+
+    private IEnumerator TypeMessage()
+    {
+        messageText.text = "";
+        foreach (char c in message)
+        {
+            messageText.text += c;
+            yield return new WaitForSeconds(typeSpeed);
+        }
     }
 }
